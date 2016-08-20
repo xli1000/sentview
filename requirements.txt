@@ -1,0 +1,5 @@
+SQLAlchemy==1.0.14
+psycopg2==2.6.1
+arrow==0.7.0
+python-dateutil==2.4.2
+python-twitter==3.1
