@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Index, Text
+from sqlalchemy import Column, Integer, String, DateTime, Index, Text, Boolean
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION
 from ..util.datamodel import DictMixin
 from ..shared import Base
@@ -13,6 +13,7 @@ class Tweet(Base, DictMixin):
 	loc = Column(String(63))
 	lat = Column(DOUBLE_PRECISION)
 	lng = Column(DOUBLE_PRECISION)
+	retweet = Column(Boolean)
 	
 	def __init__(self, **kwargs):
 		DictMixin.__init__(self, **kwargs)

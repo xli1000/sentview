@@ -31,6 +31,10 @@ def process_tweet(raw_tweet):
 		if raw_tweet.get('geo') and raw_tweet['geo'].get('coordinates'):
 			tw.lat = raw_tweet['geo']['coordinates'][0]
 			tw.lng = raw_tweet['geo']['coordinates'][1]
+		if raw_tweet.get('retweeted_status'):
+			tw.retweet = True
+		else:
+			tw.retweet = False
 		
 		dbsession.add(tw)
 		dbsession.commit()
