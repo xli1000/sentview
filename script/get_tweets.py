@@ -1,6 +1,5 @@
 import sys
 import os
-import arrow
 from dateutil import parser
 from twitter import Api
 
@@ -42,7 +41,6 @@ def main():
 			for raw_tweet in api.GetStreamSample():
 				process_tweet(raw_tweet)
 		except requests.exceptions.ChunkedEncodingError:
-			print 'ch'
 			continue
 
 
