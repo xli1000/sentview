@@ -1,0 +1,25 @@
+
+.line-chart {
+	.line {
+		fill: none;
+		stroke: red;
+	}
+}
+
+.major-chart-container {
+	width: 900px;
+}
+
+.svg-container {
+    display: block;
+    margin:auto;
+    clear: both;
+    position: relative;
+}
+
+.svg-content {
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+}

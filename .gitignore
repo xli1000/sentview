@@ -1,2 +1,6 @@
 *.pyc
 setenv.sh
+sentview/node_modules
+sentview/dashboard/templates/build
+sentview/client/build
+sentview/.sass-cache
