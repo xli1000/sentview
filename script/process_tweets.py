@@ -1,6 +1,8 @@
 import sys
 import os
 import time
+from ratelimit import rate_limited
+
 sys.path.insert(0, os.path.abspath('..'))
 
 import time
@@ -10,6 +12,8 @@ from sentview.shared import dbsession, engine
 
 sent_analyzer = SentimentIntensityAnalyzer() 
 # lexicon must be downloaded first
+
+MAX_BATCH_SIZE = 400
 
 def get_last_processed_id():
 	results = [
@@ -25,8 +29,8 @@ def score_tweets(start_id):
 			FROM tweet 
 			WHERE id >= %s AND lang=\'en\'
 			ORDER BY id ASC
-			LIMIT 200
-		''', start_id)
+			LIMIT %s
+		''', start_id, MAX_BATCH_SIZE)
 	
 	trans = connection.begin()
 	tweet_id = None
@@ -38,12 +42,14 @@ def score_tweets(start_id):
 		tweet_id = tweet[0]
 		# raw string substitution seems to improve performance by a lot over SQLAlchemy update method
 		stmts.append('UPDATE tweet SET sent_score=%f WHERE id=%d' % (scores['compound'], tweet_id))
-	connection.execute(';'.join(stmts)) 
+	if len(stmts) > 0:
+		connection.execute(';'.join(stmts)) 
 	
-	trans.commit()
+		trans.commit()
 	last_id = tweet_id
 	'''ID of the last tweet processed (max ID) will determine the range of tweets to compute aggregates for
-	and will be set as the last_processed_id at the end of that transaction'''
+	and will be set as the last_processed_id at the end of that transaction. None if no tweets updated'''
+	connection.close()
 	return last_id 
 
 def store_aggregates(start_id, last_id):
@@ -70,15 +76,19 @@ def store_aggregates(start_id, last_id):
 
 	connection.execute('UPDATE tw_processing SET last_processed_id=%s', last_id)
 	trans.commit()
+	connection.close()
 
+@rate_limited(1)
 def process_tweets():
 	t0 = time.time()
 	last_processed_id = get_last_processed_id()
 	last_id = score_tweets(last_processed_id + 1)
-	store_aggregates(last_processed_id + 1, last_id)
-	print time.time() - t0
+	if last_id is not None:
+		store_aggregates(last_processed_id + 1, last_id)
+	#print time.time() - t0
 
 def main():
+	last_exec = 0
 	while True:
 		process_tweets()
 
