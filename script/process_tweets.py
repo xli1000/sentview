@@ -2,6 +2,8 @@ import sys
 import os
 import time
 from ratelimit import rate_limited
+import arrow
+from sqlalchemy.sql import text
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -52,30 +54,50 @@ def score_tweets(start_id):
 	connection.close()
 	return last_id 
 
-def store_aggregates(start_id, last_id):
+def get_aggregates(timestamps, interval='15min'):
+	connection = engine.connect()
+	
+	query = text('''SELECT EXTRACT(epoch FROM ts), sum_sent/count_sent
+	FROM tw_agg_$interval WHERE ts IN :ts_list'''.replace('$interval', interval))
+	
+	aggregates = connection.execute(query, {'ts_list': tuple(timestamps)})
+	connection.close()
+	return { int(res[0]): res[1] for res in aggregates }
+
+def store_aggregates(start_id, last_id, interval='15min'):
 	connection = engine.connect()
 	
 	'''transaction: update last_processed_id counter only if Tweets 
 	after that point have been added to the aggregate rows'''
 	trans = connection.begin()
-	aggregates = connection.execute('''SELECT
-		ceil_time_15min(ts) ctime, SUM(sent_score) AS sum_sent, COUNT(*) AS count_sent
+	query = '''SELECT
+		ceil_time_$interval(ts) ctime, SUM(sent_score) AS sum_sent, COUNT(*) AS count_sent
 		FROM tweet 
 		WHERE lang='en' AND id > %s AND id <= %s
 		GROUP BY ctime
-	''', start_id, last_id)
+	'''.replace('$interval', interval)
+	aggregates = connection.execute(query, start_id, last_id)
 	
-	for (ts, sum_sent, count_sent) in aggregates:
-		# upsert: if no aggregate row for this timestamp exists, insert; if yes, add to sums
-		connection.execute('''INSERT INTO tw_agg_15min(ts, sum_sent, count_sent)
+	
+	# upsert: if no aggregate row for this timestamp exists, insert; if yes, add to sums
+	query = '''INSERT INTO tw_agg_$interval(ts, sum_sent, count_sent)
 			VALUES (%s, %s, %s)
-			ON CONFLICT (ts) DO UPDATE SET sum_sent = tw_agg_15min.sum_sent + %s, 
-			count_sent = tw_agg_15min.count_sent + %s''',
+			ON CONFLICT (ts) DO UPDATE SET sum_sent = tw_agg_$interval.sum_sent + %s, 
+			count_sent = tw_agg_$interval.count_sent + %s'''.replace('$interval', interval)
+	timestamps = set([])
+	for (ts, sum_sent, count_sent) in aggregates:
+		timestamps.add(ts)
+		connection.execute(
+			query,
 			(ts, sum_sent, count_sent, sum_sent, count_sent)
 		)
+	if interval == '1s':
+		connection.execute('DELETE FROM tw_agg_1s WHERE ts < %s',
+			arrow.utcnow().replace(minutes=-30).datetime)
 
 	connection.execute('UPDATE tw_processing SET last_processed_id=%s', last_id)
 	trans.commit()
+	get_aggregates(timestamps, interval=interval)
 	connection.close()
 
 @rate_limited(1)
@@ -84,7 +106,8 @@ def process_tweets():
 	last_processed_id = get_last_processed_id()
 	last_id = score_tweets(last_processed_id + 1)
 	if last_id is not None:
-		store_aggregates(last_processed_id + 1, last_id)
+		store_aggregates(last_processed_id + 1, last_id, interval='15min')
+		store_aggregates(last_processed_id + 1, last_id, interval='1s')
 	#print time.time() - t0
 
 def main():
