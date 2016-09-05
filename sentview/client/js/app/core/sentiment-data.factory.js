@@ -7,6 +7,7 @@
 	
 	function sentimentData($http) {
 		var timeSeries = {};
+		var summary = {};
 		
 		loadSentiment('10sec');
 			
@@ -14,11 +15,13 @@
 			return $http.get('/sentiment?interval=' + interval)
 				.then(function(resp) {
 					timeSeries[interval] = resp.data.timeSeries;
+					summary.historicalAverage = resp.data.historicalAverage;
 				});
 		}
 		
 		return {
-			timeSeries: timeSeries
+			timeSeries: timeSeries,
+			summary: summary
 		};
 	}
 })();

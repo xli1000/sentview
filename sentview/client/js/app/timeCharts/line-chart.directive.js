@@ -10,7 +10,8 @@
 			controller: function() {},
 			bindToController: { 
 				series: '=', 
-				aspectRatio: '@'
+				aspectRatio: '@',
+				average: '='
 			},
 			controllerAs: 'vm',
 			link: function(scope, el, attrs, controller) {				
@@ -20,7 +21,7 @@
 					}
 				}, true);
 				
-				var margin = { top: 10, right: 10, bottom: 10, left: 10 };
+				var margin = { top: 10, right: 20, bottom: 30, left: 40 };
 				var fullWidth = 1000; //viewBox pixels
 				var fullHeight = Math.round(fullWidth/parseFloat(controller.aspectRatio));
 				var width = fullWidth - margin.left - margin.right;
@@ -36,20 +37,17 @@
 					
 				function render(series) {
 					
-					
 					var x = d3.scaleTime();
 					var y = d3.scaleLinear();
-					console.log(svg);
 					
-					x.domain(d3.extent(series, function(d) { return d.ts; }));
-					var extent = d3.extent(series, function(d) { return d.score; })
-					console.log(extent);
-				
+					x.domain(d3.extent(series, function(d) { return d.ts * 1000; }));
+					var extent = d3.extent(series, function(d) { return d.score; });
+					
 					y.domain(extent);
 				
 			
 					x.range([0, width]);
-					y.range([0, height]);
+					y.range([height, 0]);
 					
 					var xAxis = d3.axisBottom()
 						.scale(x);
@@ -57,8 +55,8 @@
 					var yAxis = d3.axisLeft()
 						.scale(y);
 						
-					var line = d3.line()
-						.x(function(d) { return x(d.ts); })
+					var seriesLine = d3.line()
+						.x(function(d) { return x(d.ts * 1000); })
 						.y(function(d) { return y(d.score); });
 					
 					var chartArea = 
@@ -68,7 +66,24 @@
 					chartArea.append('path')
 						.datum(series)
 						.attr('class', 'line')
-						.attr('d', line);
+						.attr('d', seriesLine);
+						
+					chartArea.append('g')
+						.attr('class', 'x axis')
+						.attr('transform', 'translate(0,' + height + ')')
+						.call(xAxis);
+					
+					chartArea.append('g')
+						.attr('class', 'y axis')
+						.call(yAxis);
+					
+					//average line
+					chartArea.append('line')
+						.attr('class', 'average-line')
+						.attr('x1', 0)
+						.attr('y1', y(controller.average))
+						.attr('x2', width)
+						.attr('y2', y(controller.average));
 						
 					
 				}

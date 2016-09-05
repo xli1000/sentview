@@ -9,6 +9,7 @@
 		var vm = this;
 		
 		vm.timeSeries = sentimentData.timeSeries;
+		vm.summary = sentimentData.summary;
 		
 	}
 })();
