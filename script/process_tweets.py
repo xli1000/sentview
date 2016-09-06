@@ -4,6 +4,8 @@ import time
 from ratelimit import rate_limited
 import arrow
 from sqlalchemy.sql import text
+from flask_socketio import SocketIO, emit
+import string
 
 sys.path.insert(0, os.path.abspath('..'))
 
@@ -14,6 +16,8 @@ from sentview.shared import dbsession, engine
 
 sent_analyzer = SentimentIntensityAnalyzer() 
 # lexicon must be downloaded first
+
+socketio = SocketIO(message_queue='redis://')
 
 MAX_BATCH_SIZE = 400
 
@@ -54,14 +58,27 @@ def score_tweets(start_id):
 	connection.close()
 	return last_id 
 
-def get_aggregates(timestamps, interval='15min'):
-	connection = engine.connect()
-	
-	query = text('''SELECT EXTRACT(epoch FROM ts), sum_sent/count_sent
-	FROM tw_agg_$interval WHERE ts IN :ts_list'''.replace('$interval', interval))
-	
-	aggregates = connection.execute(query, {'ts_list': tuple(timestamps)})
-	connection.close()
+def get_updated_aggregates(timestamps, interval='15min'):
+	'''query for aggregates (2-interval moving average) for any timestamps that have had updates'''
+	if len(timestamps) > 0:
+		connection = engine.connect()
+		subtract_interval = { '1s': '1 second', '15min': '15 minutes' }[interval]
+		query = text(
+			string.Template('''SELECT
+				EXTRACT(epoch FROM agg1.ts) AS ts,
+				(agg1.sum_sent + agg2.sum_sent)/(agg1.count_sent+agg2.count_sent),
+				(agg1.count_sent + agg2.count_sent)
+				FROM tw_agg_$interval agg1
+				JOIN tw_agg_$interval agg2 ON agg1.ts - INTERVAL '$subtract_interval' = agg2.ts\
+				WHERE agg1.ts IN :ts_list''').substitute(
+					interval=interval, subtract_interval=subtract_interval
+				)
+		)
+		
+		aggregates = connection.execute(query, {'ts_list': tuple(timestamps)})
+		connection.close()
+	else:
+		aggregates = []
 	return { int(res[0]): res[1] for res in aggregates }
 
 def store_aggregates(start_id, last_id, interval='15min'):
@@ -97,8 +114,8 @@ def store_aggregates(start_id, last_id, interval='15min'):
 
 	connection.execute('UPDATE tw_processing SET last_processed_id=%s', last_id)
 	trans.commit()
-	get_aggregates(timestamps, interval=interval)
 	connection.close()
+	return get_updated_aggregates(timestamps, interval=interval)
 
 @rate_limited(1)
 def process_tweets():
@@ -106,8 +123,11 @@ def process_tweets():
 	last_processed_id = get_last_processed_id()
 	last_id = score_tweets(last_processed_id + 1)
 	if last_id is not None:
-		store_aggregates(last_processed_id + 1, last_id, interval='15min')
-		store_aggregates(last_processed_id + 1, last_id, interval='1s')
+		update_msg = {}
+		for interval in ['15min', '1s']:
+			values = store_aggregates(last_processed_id + 1, last_id, interval=interval)
+			update_msg[interval] = values
+		socketio.emit('sentimentUpdate', update_msg, namespace='/rt')
 	#print time.time() - t0
 
 def main():

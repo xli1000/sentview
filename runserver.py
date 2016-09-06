@@ -1,6 +1,8 @@
-from sentview import create_app
+import eventlet
+eventlet.monkey_patch()
+from sentview import create_app, socketio
 
 app = create_app()
 
 if __name__ == '__main__':
-	app.run(debug=True)
+	socketio.run(app, debug=True)

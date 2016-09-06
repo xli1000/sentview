@@ -2,13 +2,18 @@
 <html>
 	<head>
 		<link href="//cdn.jsdelivr.net/blazecss/2.13.0/blaze.min.css" rel="stylesheet" />
+		<link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet">
 		<link href="/build/css/site.css?v=<%= cacheString %>" rel="stylesheet" />
 		<title>Real-time Twitter Sample Sentiment</title>
 	</head>
 	<body ng-app="sentview.dashboard">
-		<sv-time-panel></sv-time-panel>
-		
-		<script src="/build/js/lib.js?v=<%= libCacheString %>"></script>
-		<script src="/build/js/app.js?v=<%= cacheString %>"></script>
+		<div class="wrap">
+			<h1>Real-time Twitter Sample API Sentiment</h1>
+			
+			<sv-time-panel></sv-time-panel>
+			
+			<script src="/build/js/lib.js?v=<%= libCacheString %>"></script>
+			<script src="/build/js/app.js?v=<%= cacheString %>"></script>
+		</div>
 	</body>
 </html>

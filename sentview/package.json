@@ -10,7 +10,9 @@
   "license": "MIT",
   "dependencies": {
     "d3": "~4.2.2",
-    "angular": "~1.5.8"
+    "angular": "~1.5.8",
+    "socket.io-client": "~1.4.8",
+    "lodash": "~4.15.0"
   },
   "devDependencies": {
     "grunt": "~1.0.1",

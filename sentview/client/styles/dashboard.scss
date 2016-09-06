@@ -1,3 +1,12 @@
+body {
+	font-family: 'Roboto';
+}
+
+.wrap {
+	width: 1000px;
+	margin: auto;
+	clear:both;
+}
 
 .line-chart {
 	.line {
@@ -12,10 +21,24 @@
 		stroke-width: 1px;
 		stroke-dasharray: 2,4
 	}
+	
+	.current-point {
+		r: 3;
+		fill: red;
+	}
 }
 
 .major-chart-container {
+	position: relative;
 	width: 900px;
+}
+
+.main-chart {
+	height: 500px;
+}
+
+.sub-chart {
+	height: 130px;
 }
 
 .svg-container {

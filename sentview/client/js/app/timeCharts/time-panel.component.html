@@ -1,8 +1,15 @@
 
 <div>
-	<sv-line-chart class="svg-container major-chart-container" 
-		series="vm.timeSeries['10sec']"
+	<h3>Past 7 Days</h3>
+	<sv-line-chart class="svg-container major-chart-container main-chart" 
+		series="vm.timeSeries['15min']"
 		average="vm.summary.historicalAverage"
 		aspect-ratio="1.8">
+	</sv-line-chart>
+	<h3>Past 2 Minutes</h3>
+	<sv-line-chart class="svg-container major-chart-container sub-chart" 
+		series="vm.timeSeries['1s']"
+		average="vm.summary.historicalAverage"
+		aspect-ratio="7">
 	</sv-line-chart>
 </div>

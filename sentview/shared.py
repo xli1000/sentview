@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.ext.declarative import declarative_base
+from flask_socketio import SocketIO, emit
 from sentview.config import config
 
 engine = create_engine(
@@ -10,3 +11,4 @@ engine = create_engine(
 )
 dbsession = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 Base = declarative_base()
+socketio = SocketIO(message_queue='redis://')

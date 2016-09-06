@@ -14,10 +14,15 @@
 				average: '='
 			},
 			controllerAs: 'vm',
-			link: function(scope, el, attrs, controller) {				
+			link: function(scope, el, attrs, controller) {	
+				var initialized = false;			
 				scope.$watch('vm.series', function() {
 					if (controller.series) {
-						render(controller.series);
+						if (!initialized) {
+							initialize(controller.series);
+							initialized = true;
+						}
+						rerender(controller.series);
 					}
 				}, true);
 				
@@ -26,6 +31,18 @@
 				var fullHeight = Math.round(fullWidth/parseFloat(controller.aspectRatio));
 				var width = fullWidth - margin.left - margin.right;
 				var height = fullHeight - margin.top - margin.bottom;
+				var x;
+				var y;
+				var xAxis;
+				var yAxis;
+				var xAxisEl;
+				var yAxisEl;
+				var seriesLine;
+				var chartArea;
+				var seriesLinePath;
+				var averageLinePath;
+				var currentPoint;
+				var valueLabel;
 				
 				var svg = d3.select(el[0])
 					.append('svg')
@@ -34,58 +51,83 @@
 					.attr('viewBox', '0 0 ' + fullWidth  +' ' + fullHeight)
 					.attr('preserveAspectRatio', 'xMidYMin meet');
 				
-					
-				function render(series) {
-					
-					var x = d3.scaleTime();
-					var y = d3.scaleLinear();
-					
-					x.domain(d3.extent(series, function(d) { return d.ts * 1000; }));
-					var extent = d3.extent(series, function(d) { return d.score; });
-					
-					y.domain(extent);
 				
+				function rerender(series) {
+					x.domain(d3.extent(series, function(d) { return d.ts * 1000; }));
+					var yExtent = d3.extent(series, function(d) { return d.score; });
+					
+					y.domain(yExtent);
+						
+					xAxisEl
+						.call(xAxis);
+					yAxisEl
+						.call(yAxis);
+					
+					averageLinePath
+						.attr('y1', y(controller.average))
+						.attr('y2', y(controller.average));
+					
+					seriesLinePath
+						.datum(series)
+						.attr('d', seriesLine);
+					
+					currentPoint
+						.attr('cx', x(series[series.length-1].ts * 1000))
+						.attr('cy', y(series[series.length-1].score))
+						.style('opacity', '0')
+						.transition()
+						.style('opacity', '100')
+						.duration(670);
+					
+					valueLabel
+						.text(d3.format('.5f')(series[series.length-1].score));
+				}
+				
+				function initialize(series) {
+					
+					x = d3.scaleTime();
+					y = d3.scaleLinear();
 			
 					x.range([0, width]);
 					y.range([height, 0]);
 					
-					var xAxis = d3.axisBottom()
-						.scale(x);
-						
-					var yAxis = d3.axisLeft()
-						.scale(y);
-						
-					var seriesLine = d3.line()
+					seriesLine = d3.line()
 						.x(function(d) { return x(d.ts * 1000); })
 						.y(function(d) { return y(d.score); });
 					
-					var chartArea = 
+					chartArea = 
 						svg.append('g')
 							.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 					
-					chartArea.append('path')
-						.datum(series)
-						.attr('class', 'line')
-						.attr('d', seriesLine);
+					seriesLinePath = chartArea.append('path')
+						.attr('class', 'line');
+					
+					xAxis = d3.axisBottom()
+						.scale(x);
 						
-					chartArea.append('g')
+					yAxis = d3.axisLeft()
+						.scale(y)
+						.ticks(6);
+						
+					xAxisEl = chartArea.append('g')
 						.attr('class', 'x axis')
-						.attr('transform', 'translate(0,' + height + ')')
-						.call(xAxis);
+						.attr('transform', 'translate(0,' + height + ')');
 					
-					chartArea.append('g')
-						.attr('class', 'y axis')
-						.call(yAxis);
+					yAxisEl = chartArea.append('g')
+						.attr('class', 'y axis');
 					
-					//average line
-					chartArea.append('line')
+					averageLinePath = chartArea.append('line')
 						.attr('class', 'average-line')
 						.attr('x1', 0)
-						.attr('y1', y(controller.average))
-						.attr('x2', width)
-						.attr('y2', y(controller.average));
-						
+						.attr('x2', width);
 					
+					currentPoint = chartArea.append('circle')
+						.attr('class', 'current-point');
+						
+					valueLabel = chartArea.append('text')
+						.attr('x', width)
+						.attr('y', 10)
+						.attr('text-anchor', 'end');
 				}
 			}
 		};
