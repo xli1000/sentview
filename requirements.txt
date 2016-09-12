@@ -9,3 +9,6 @@ ratelimit==1.1.0
 arrow==0.7.0
 Flask-SocketIO==2.7.1
 eventlet==0.19.0
+numpy==1.11.1
+scikit-learn==0.17.1
+scipy==0.18.0
