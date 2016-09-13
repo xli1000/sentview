@@ -5,4 +5,4 @@
 			controller: 'TimePanelController as vm',
 			templateUrl: '/js/app/timeCharts/time-panel.component.html'
 		});
-})();
+}());

@@ -20,21 +20,33 @@
 		var timeSeriesTimestampMap = {}; 
 		var summary = {};
 		
-		loadSentiment().then(function() {
-			socket.on('sentimentUpdate', onSentimentUpdate);
-		});
+		
+		return {
+			timeSeries: timeSeriesArrays,
+			summary: summary,
+			loadSentiment: loadSentiment
+		};
 		
 		function loadSentiment() {
 			return $http.get('/sentiment')
-				.then(function(resp) {
-					_.merge(timeSeriesArrays, resp.data.timeSeries);
-					generateTimestampMap();
-					summary.historicalAverage = resp.data.historicalAverage;
-				});
+				.then(onLoadSentiment);
+			
+			function onLoadSentiment(resp) {
+				_.merge(timeSeriesArrays, resp.data.timeSeries);
+				generateTimestampMap();
+				summary.historicalAverage = resp.data.historicalAverage;
+				listenForUpdates();
+			}
+		}
+		
+		function listenForUpdates() {
+			socket.on('sentimentUpdate', onSentimentUpdate);
 		}
 		
 		function generateTimestampMap() {
-			intervals.forEach(function(interval) {
+			intervals.forEach(addToMap);
+			
+			function addToMap(interval) {
 				if (timeSeriesArrays[interval]) {
 					timeSeriesTimestampMap[interval] = {};
 					for (var i=0; i < timeSeriesArrays[interval].length; i++) {
@@ -42,7 +54,7 @@
 						timeSeriesTimestampMap[interval][datum.ts] = datum;
 					};
 				}
-			});
+			}
 		}
 		
 		function insertValueIntoArrays(interval, datum) {
@@ -56,7 +68,9 @@
 		
 		function onSentimentUpdate(data) {
 			intervals.forEach(function(interval) {
-				_.forIn(data[interval], function(score, timestamp) {
+				_.forIn(data[interval], upsertDataPoint);
+				
+				function upsertDataPoint(score, timestamp) {
 					var datum = { score: score, ts: parseInt(timestamp) };
 					//if this timestamp hasn't been encountered before, insert it into the array
 					if (timeSeriesTimestampMap[interval][datum.ts] === undefined) {
@@ -66,13 +80,8 @@
 						//add/update value in map
 						_.merge(timeSeriesTimestampMap[interval][datum.ts], datum);
 					}
-				});
+				}
 			});
 		}
-		
-		return {
-			timeSeries: timeSeriesArrays,
-			summary: summary
-		};
 	}
-})();
+}());

@@ -4,32 +4,37 @@
 		.module('sentview.core')
 		.factory('socket', socket);
 	
-	socket.$inject = ['$rootScope'];
+	socket.$inject = ['$timeout'];
 	
-	function socket($rootScope) {
+	function socket($timeout) {
 		/* socketio wrapper factory from
 		 * http://www.html5rocks.com/en/tutorials/frameworks/angular-websockets/ */
 		io.transports = ['websocket', 'xhr-polling'];
 		var socket = io.connect('/rt');
+		
 		return {
-			on: function(eventName, callback) {
-				socket.on(eventName, function() {
-					var args = arguments;
-					$rootScope.$apply(function() {
-						callback.apply(socket, args);
-					});
-				});
-			},
-			emit: function(eventName, data, callback) {
-				socket.emit(eventName, data, function() {
-					var args = arguments;
-					$rootScope.$apply(function() {
-						if (callback) {
-						  callback.apply(socket, args);
-						}
-					});
-				});
-			}
+			on: on,
+			emit: emit
 		};
+		
+		function on(eventName, callback) {
+			socket.on(eventName, function() {
+				var args = arguments;
+				$timeout(function() {
+					callback.apply(socket, args);
+				});
+			});
+		}
+		
+		function emit(eventName, data, callback) {
+			socket.emit(eventName, data, function() {
+				var args = arguments;
+				$timeout(function() {
+					if (callback) {
+					  callback.apply(socket, args);
+					}
+				});
+			});
+		}
 	}
-})();
+}());
