@@ -19,6 +19,6 @@ class base_config(object):
 		port = DB_PORT,
 		db = DB_DB
 	)
-	
+	MESSAGE_QUEUE = 'redis://'
 
 config = base_config

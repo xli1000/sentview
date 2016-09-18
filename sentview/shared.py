@@ -11,4 +11,4 @@ engine = create_engine(
 )
 dbsession = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 Base = declarative_base()
-socketio = SocketIO(message_queue='redis://')
+socketio = SocketIO(message_queue=config.MESSAGE_QUEUE)
