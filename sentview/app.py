@@ -14,7 +14,7 @@ def create_app(app_name='sentview', config=config):
 	app.config.from_object(config)
 	
 	register_blueprints(app)
-	socketio.init_app(app, message_queue='redis://')
+	socketio.init_app(app, message_queue=config.MESSAGE_QUEUE)
 	return app
 
 
