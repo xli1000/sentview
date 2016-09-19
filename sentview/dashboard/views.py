@@ -17,14 +17,17 @@ def get_moving_averages(start_datetime, interval=INTERVAL_15MIN):
 	query = queries.SELECT_MOVING_AVERAGES_BY_TIMESTAMP.format(interval=interval, subtract_interval=subtract_interval)
 	results = engine.execute(query, start_datetime)
 	return [ 
-		{ 'ts': res[0], 'score': res[1] } 
+		{ 'ts': res['ts'], 'score': res['score'] } 
 		for res in results
 	]
 
 def get_average():
-	results = engine.execute(queries.SELECT_AVERAGE)
-	average = [ res[0] for res in results ][0]
-	return average
+	res = engine.execute(queries.SELECT_AVERAGE).fetchone()
+	if res is None:
+		return None
+	else:
+		return res['average']
+	
 
 def get_terms():
 	res = engine.execute(queries.SELECT_LAST_TERM_DATA).fetchone()

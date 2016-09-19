@@ -44,14 +44,12 @@ class TweetProcessor(object):
 		Returns:
 			the ID of the last Tweet that has already been processed.
 		"""
-		results = [
-			row for row in 
-			self.engine.execute(queries.SELECT_LAST_PROCESSED_ID) 
-		]
-		if len(results) == 0:
+		result = self.engine.execute(queries.SELECT_LAST_PROCESSED_ID).fetchone()
+
+		if result is None:
 			raise InvalidStateError('Last processed Tweet ID was not set in the database.')
 
-		return results[0][0]
+		return result['last_processed_id']
 
 	def score_tweets(self, start_id):
 		"""
@@ -110,7 +108,7 @@ class TweetProcessor(object):
 				aggregates = connection.execute(query, {'ts_list': tuple(timestamps)})
 		else:
 			aggregates = []
-		return { int(res[0]): res[1] for res in aggregates }
+		return { int(res['ts']): res['score'] for res in aggregates }
 
 	def store_aggregates(self, start_id, last_id, interval=INTERVAL_15MIN):
 		"""
