@@ -7,11 +7,13 @@ import sys
 import time
 
 import arrow
+import click
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tokenize.casual import casual_tokenize
 import numpy as np
 from sklearn.feature_extraction import text as sklearn_text
 from sklearn.feature_extraction.text import TfidfVectorizer
+import sqlalchemy.exc
 from sqlalchemy.sql import text
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -81,9 +83,15 @@ class TermAnalyzer(object):
 			resp = self.tfidf.transform([''.join(tweets)])
 			print resp.nonzero()
 			
-			top_indices = sorted(list(resp.nonzero()[1]), 
-				key=lambda feature_index: -1*resp[0, feature_index])[0:20]
-			term_scores = [ (feature_names[index], resp[0, index]) for index in top_indices ]
+			indices = sorted(
+				list(resp.nonzero()[1]), 
+				key=lambda feature_index: -1 * resp[0, feature_index]
+			)
+			term_scores = [ 
+				(feature_names[index], resp[0, index]) 
+				for index in indices 
+				if len(feature_names[index]) > 1 and 'https:' not in feature_names[index]
+			][0:30]
 			term_lists.append(term_scores)
 
 		return term_lists
@@ -122,7 +130,21 @@ class TermAnalyzer(object):
 		connection.close()
 		return neg_tweets, pos_tweets
 
+@click.command()
+@click.option('--loop/--no-loop', default=False)
+@click.option('--interval', default=60)
+def main(interval=60, loop=False):
+	term_analyzer = TermAnalyzer()
+	while True:
+		try:
+			term_analyzer.analyze_recent_tweets()
+		except sqlalchemy.exc.OperationalError as e:
+			logger.error('Problem with database connection.')
+			logger.exception(e)
+		if not loop:
+			break
+		time.sleep(interval -  time.time() % interval )
+
 if __name__ == '__main__':
 	logging.basicConfig()
-	term_analyzer = TermAnalyzer()
-	term_analyzer.analyze_recent_tweets()
+	main()
