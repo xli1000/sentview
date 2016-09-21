@@ -162,9 +162,9 @@ class TweetProcessor(object):
 				values = self.store_aggregates(last_processed_id + 1, last_id, interval=interval)
 				update_msg[interval] = values
 			self.delete_old_aggregates()
-		if self.socket:
-			# send an event to notify web app of new data
-			self.socket.emit('sentimentUpdate', update_msg, namespace='/rt') 
+			if self.socket:
+				# send an event to notify web app of new data
+				self.socket.emit('sentimentUpdate', update_msg, namespace='/rt') 
 
 	@rate_limited(1)
 	def rate_limited_process_tweets(self):
