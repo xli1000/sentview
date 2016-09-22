@@ -24,6 +24,7 @@ from sentview.shared import dbsession, engine
 DEFAULT_TFIDF_PATH = 'tfidf.p'
 DEFAULT_CORPUS_PATH = 'corpus'
 EXTRA_STOP_WORDS = ['don', 'amp','just', 'fucking', 'ur','gonna', 'feel', 'follow']
+DEFAULT_INTERVAL_SIZE = 900 # seconds
 TERM_COUNT = 30 # number of top terms to save
 
 # approx. bottom and top quintiles of sentiment score
@@ -109,10 +110,14 @@ class TermAnalyzer(object):
 
 		return term_lists
 
-	def analyze_recent_tweets(self):
-		"""Computes lists of significant terms for positive and negative tweets, storing them in a database row"""
-		start, end = self.get_recent_interval()
-		neg_tweets, pos_tweets = self.get_recent_tweets(start, end)
+	def analyze_tweets(self, ts=None):
+		"""
+		Computes lists of significant terms for positive and negative tweets, storing them in a database row
+		Args
+			ts: Time to 
+		"""
+		start, end = self.get_interval(ts=ts)
+		neg_tweets, pos_tweets = self.get_tweets_in_range(start, end)
 		term_lists = self.get_term_scores([neg_tweets, pos_tweets])
 		if len(term_lists[0]) + len(term_lists[1]) > 0:
 			data = {}
@@ -126,13 +131,21 @@ class TermAnalyzer(object):
 			logger.warn('No terms')
 
 	@staticmethod
-	def get_recent_interval(shift=-60, interval_size=900):
-		"""parameters in seconds"""
-		end = arrow.get(int(math.ceil( (time.time() + shift) / interval_size)) * interval_size)
+	def get_interval(ts=None, shift=-60, interval_size=DEFAULT_INTERVAL_SIZE):
+		"""
+		Returns interval start and end times (arrow) based on a time specificied by ts.
+		If ts is None, base interval on present. Gets the last whole interval such that end is less than ts + shift
+		Parameters in seconds
+		"""
+		if ts is None:
+			ts = time.time()
+		end_ts = int(math.ceil( (ts + shift) / interval_size) ) * interval_size
+		end = arrow.get(end_ts)
 		start = end.replace(seconds=-interval_size)
+		print end
 		return start, end
 				
-	def get_recent_tweets(self, start, end):
+	def get_tweets_in_range(self, start, end):
 		connection = self.db_engine.connect()
 		neg_tweets = []
 		pos_tweets = []
@@ -152,20 +165,27 @@ class TermAnalyzer(object):
 
 @click.command()
 @click.option('--loop/--no-loop', default=False)
-@click.option('--interval', default=60)
+@click.option('--run-interval', default=60, help='Run every this number of seconds')
 @click.option('--corpus-path', default=DEFAULT_CORPUS_PATH)
-def main(interval=60, loop=False, corpus_path=DEFAULT_CORPUS_PATH):
+@click.option('--start-time', type=int, default=None, 
+			help='''If specified, compute for this time instead of present. Otherwise, use the present. Unix timestamp''')
+def main(run_interval=60, loop=False, corpus_path=DEFAULT_CORPUS_PATH, start_time=None):
 	term_analyzer = TermAnalyzer(corpus_path=corpus_path)
 	term_analyzer.load_or_create_tfidf()
+	ts = start_time 
 	while True:
 		try:
-			term_analyzer.analyze_recent_tweets()
+			term_analyzer.analyze_tweets(ts=ts)
 		except sqlalchemy.exc.OperationalError as e:
 			logger.error('Problem with database connection.')
 			logger.exception(e)
+
 		if not loop:
 			break
-		time.sleep(interval -  time.time() % interval )
+		elif ts is not None:
+			# if not using the present, calculate the time for the next interval
+			ts += DEFAULT_INTERVAL_SIZE
+		time.sleep(run_interval -  time.time() % run_interval )
 
 if __name__ == '__main__':
 	logging.basicConfig()
