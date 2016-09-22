@@ -27,7 +27,6 @@ def get_average():
 		return None
 	else:
 		return res['average']
-	
 
 def get_terms():
 	res = engine.execute(queries.SELECT_LAST_TERM_DATA).fetchone()
@@ -65,3 +64,15 @@ def terms():
 	"""Return significant terms for recent negative and positive tweets"""
 	terms = get_terms()
 	return jsonify(terms)
+
+@dashboard.route('/status')
+def status():
+	data = {}
+	with engine.connect() as connection:
+		for (key, query) in [('last_tweet_ts', queries.SELECT_LAST_TWEET_TS), ('last_scored_ts', queries.SELECT_LAST_SCORED_TS)]:
+			result = engine.execute(queries.SELECT_LAST_TWEET_TS).fetchone()
+			if result is not None:
+				data[key] = result[0]
+			else:
+				data[key] = None
+	return jsonify(data)
