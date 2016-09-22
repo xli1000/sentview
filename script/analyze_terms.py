@@ -24,6 +24,7 @@ from sentview.shared import dbsession, engine
 DEFAULT_TFIDF_PATH = 'tfidf.p'
 DEFAULT_CORPUS_PATH = 'corpus'
 EXTRA_STOP_WORDS = ['don', 'amp','just', 'fucking', 'ur','gonna', 'feel', 'follow']
+TERM_COUNT = 30 # number of top terms to save
 
 # approx. bottom and top quintiles of sentiment score
 NEGATIVE_THRESHOLD = -0.15  
@@ -69,7 +70,13 @@ class TermAnalyzer(object):
 			self.fit_tfidf(save=True, save_path=self.tfidf_save_path, corpus_path=self.corpus_path)
 
 	def fit_tfidf(self, save=False, save_path=DEFAULT_TFIDF_PATH, corpus_path=DEFAULT_CORPUS_PATH):
-		for filename in os.listdir(corpus_path):
+		try:
+			filenames = os.listdir(corpus_path)
+		except OSError as e:
+			logger.error('Error listing directory.')
+			raise e
+
+		for filename in filenames:
 			filepath = os.path.join(corpus_path, filename)
 			try:
 				with open(filepath) as f:
@@ -97,7 +104,7 @@ class TermAnalyzer(object):
 				(feature_names[index], resp[0, index]) 
 				for index in indices 
 				if len(feature_names[index]) > 1 and 'https:' not in feature_names[index]
-			][0:30]
+			][0:TERM_COUNT]
 			term_lists.append(term_scores)
 
 		return term_lists
@@ -107,13 +114,16 @@ class TermAnalyzer(object):
 		start, end = self.get_recent_interval()
 		neg_tweets, pos_tweets = self.get_recent_tweets(start, end)
 		term_lists = self.get_term_scores([neg_tweets, pos_tweets])
-		data = {}
-		for (i, key) in [(0, 'negative'), (1, 'positive')]:
-		 	data[key] = { term: score for (term, score) in term_lists[i] }
-		json_data = json.dumps(data)
-		connection = self.db_engine.connect()
-		connection.execute(queries.INSERT_TERM_DATA, end.datetime, json_data, json_data )
-		connection.close()
+		if len(term_lists[0]) + len(term_lists[1]) > 0:
+			data = {}
+			for (i, key) in [(0, 'negative'), (1, 'positive')]:
+			 	data[key] = { term: score for (term, score) in term_lists[i] }
+			json_data = json.dumps(data)
+			connection = self.db_engine.connect()
+			connection.execute(queries.INSERT_TERM_DATA, end.datetime, json_data, json_data )
+			connection.close()
+		else:
+			logger.warn('No terms')
 
 	@staticmethod
 	def get_recent_interval(shift=-60, interval_size=900):
@@ -143,8 +153,9 @@ class TermAnalyzer(object):
 @click.command()
 @click.option('--loop/--no-loop', default=False)
 @click.option('--interval', default=60)
-def main(interval=60, loop=False):
-	term_analyzer = TermAnalyzer()
+@click.option('--corpus-path', default=DEFAULT_CORPUS_PATH)
+def main(interval=60, loop=False, corpus_path=DEFAULT_CORPUS_PATH):
+	term_analyzer = TermAnalyzer(corpus_path=corpus_path)
 	term_analyzer.load_or_create_tfidf()
 	while True:
 		try:
