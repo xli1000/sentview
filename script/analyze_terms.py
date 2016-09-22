@@ -25,6 +25,10 @@ DEFAULT_TFIDF_PATH = 'tfidf.p'
 DEFAULT_CORPUS_PATH = 'corpus'
 EXTRA_STOP_WORDS = ['don', 'amp','just', 'fucking', 'ur','gonna', 'feel', 'follow']
 
+NEGATIVE_THRESHOLD = -0.15  
+POSITIVE_THRESHOLD = 0.15    
+
+
 logger = logging.getLogger(__name__)
 
 def tokenize(text):
@@ -34,11 +38,6 @@ class TermAnalyzer(object):
 	def __init__(self, tfidf_save_path=DEFAULT_TFIDF_PATH, db_engine=engine, corpus_path=DEFAULT_CORPUS_PATH):
 		self.tfidf_save_path = tfidf_save_path
 		self.corpus_path = corpus_path
-		if os.path.isfile(self.tfidf_save_path):
-			self.tfidf = self.load_tfidf(save_path=self.tfidf_save_path)
-		else:
-			self.tfidf = self.create_tfidf()
-			self.fit_tfidf(save=True, save_path=self.tfidf_save_path, corpus_path=self.corpus_path)
 		self.db_engine = db_engine
 	
 	@staticmethod
@@ -61,6 +60,13 @@ class TermAnalyzer(object):
 			min_df=2
 		)
 
+	def load_or_create_tfidf(self):
+		if os.path.isfile(self.tfidf_save_path):
+			self.tfidf = self.load_tfidf(save_path=self.tfidf_save_path)
+		else:
+			self.tfidf = self.create_tfidf()
+			self.fit_tfidf(save=True, save_path=self.tfidf_save_path, corpus_path=self.corpus_path)
+
 	def fit_tfidf(self, save=False, save_path=DEFAULT_TFIDF_PATH, corpus_path=DEFAULT_CORPUS_PATH):
 		for filename in os.listdir(corpus_path):
 			filepath = os.path.join(corpus_path, filename)
@@ -81,7 +87,6 @@ class TermAnalyzer(object):
 		feature_names = self.tfidf.get_feature_names()
 		for tweets in tweet_lists:
 			resp = self.tfidf.transform([''.join(tweets)])
-			print resp.nonzero()
 			
 			indices = sorted(
 				list(resp.nonzero()[1]), 
@@ -120,9 +125,13 @@ class TermAnalyzer(object):
 		connection = self.db_engine.connect()
 		neg_tweets = []
 		pos_tweets = []
-		for (compare_sign, threshold) in [('>', 0.15), ('<', -0.15)]:
-			query = queries.SELECT_TWEETS_BY_TIME_RANGE_AND_SCORE.format(compare_sign=compare_sign, threshold=threshold)
-			tweets = [ result['text'] for result in connection.execute(text(query), {'start':start.datetime, 'end': end.datetime}) ]
+		for (compare_sign, threshold) in [('>', POSITIVE_THRESHOLD), ('<', NEGATIVE_THRESHOLD)]:
+			query = (queries.SELECT_TWEETS_BY_TIME_RANGE_AND_SCORE
+						.format(compare_sign=compare_sign, threshold=threshold))
+			tweets = [ 
+				result['text'] for result in 
+				connection.execute(text(query), {'start':start.datetime, 'end': end.datetime}) 
+			]
 			if compare_sign == '>':
 				pos_tweets = tweets
 			else:
@@ -135,6 +144,7 @@ class TermAnalyzer(object):
 @click.option('--interval', default=60)
 def main(interval=60, loop=False):
 	term_analyzer = TermAnalyzer()
+	term_analyzer.load_or_create_tfidf()
 	while True:
 		try:
 			term_analyzer.analyze_recent_tweets()
