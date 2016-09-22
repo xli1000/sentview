@@ -25,8 +25,9 @@ DEFAULT_TFIDF_PATH = 'tfidf.p'
 DEFAULT_CORPUS_PATH = 'corpus'
 EXTRA_STOP_WORDS = ['don', 'amp','just', 'fucking', 'ur','gonna', 'feel', 'follow']
 
+# approx. bottom and top quintiles of sentiment score
 NEGATIVE_THRESHOLD = -0.15  
-POSITIVE_THRESHOLD = 0.15    
+POSITIVE_THRESHOLD = 0.5    
 
 
 logger = logging.getLogger(__name__)
