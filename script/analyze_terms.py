@@ -38,7 +38,8 @@ def tokenize(text):
 	return casual_tokenize(text, strip_handles=True, preserve_case=False)
 
 class TermAnalyzer(object):
-	def __init__(self, tfidf_save_path=DEFAULT_TFIDF_PATH, db_engine=engine, corpus_path=DEFAULT_CORPUS_PATH):
+	def __init__(self, tfidf_save_path=DEFAULT_TFIDF_PATH, 
+				db_engine=engine, corpus_path=DEFAULT_CORPUS_PATH):
 		self.tfidf_save_path = tfidf_save_path
 		self.corpus_path = corpus_path
 		self.db_engine = db_engine
@@ -134,15 +135,14 @@ class TermAnalyzer(object):
 	def get_interval(ts=None, shift=-60, interval_size=DEFAULT_INTERVAL_SIZE):
 		"""
 		Returns interval start and end times (arrow) based on a time specificied by ts.
-		If ts is None, base interval on present. Gets the last whole interval such that end is less than ts + shift
+		If ts is None, base interval on present. Gets the last whole interval containing ts - shift
 		Parameters in seconds
 		"""
 		if ts is None:
 			ts = time.time()
-		end_ts = int(math.ceil( (ts + shift) / interval_size) ) * interval_size
+		end_ts = int(math.ceil( (float(ts) + shift) / interval_size) ) * interval_size
 		end = arrow.get(end_ts)
 		start = end.replace(seconds=-interval_size)
-		print end
 		return start, end
 				
 	def get_tweets_in_range(self, start, end):
@@ -165,11 +165,16 @@ class TermAnalyzer(object):
 
 @click.command()
 @click.option('--loop/--no-loop', default=False)
-@click.option('--run-interval', default=60, help='Run every this number of seconds')
+@click.option('--run-interval', default=300,
+				 help='Run every this number of seconds')
 @click.option('--corpus-path', default=DEFAULT_CORPUS_PATH)
-@click.option('--start-time', type=int, default=None, 
-			help='''If specified, compute for this time instead of present. Otherwise, use the present. Unix timestamp''')
-def main(run_interval=60, loop=False, corpus_path=DEFAULT_CORPUS_PATH, start_time=None):
+@click.option('--start-time', type=float, default=None, 
+				help=('If specified, compute for this time instead of present.'
+				'Otherwise, use the present. Unix timestamp'))
+def main(run_interval=300, 
+		loop=False, 
+		corpus_path=DEFAULT_CORPUS_PATH, 
+		start_time=None):
 	term_analyzer = TermAnalyzer(corpus_path=corpus_path)
 	term_analyzer.load_or_create_tfidf()
 	ts = start_time 
