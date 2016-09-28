@@ -23,7 +23,7 @@ from sentview.shared import dbsession, engine
 
 DEFAULT_TFIDF_PATH = 'tfidf.p'
 DEFAULT_CORPUS_PATH = 'corpus'
-EXTRA_STOP_WORDS = ['don', 'amp','just', 'fucking', 'ur','gonna', 'feel', 'follow']
+EXTRA_STOP_WORDS = ['don', 'amp','just', 'fucking', 'ur','gonna', 'feel', 'follow', 'mert']
 DEFAULT_INTERVAL_SIZE = 900 # seconds
 TERM_COUNT = 30 # number of top terms to save
 
@@ -171,7 +171,7 @@ class TermAnalyzer(object):
 @click.option('--start-time', type=float, default=None, 
 				help=('If specified, compute for this time instead of present.'
 				'Otherwise, use the present. Unix timestamp'))
-def main(run_interval=300, 
+def main(run_interval=DEFAULT_INTERVAL_SIZE, 
 		loop=False, 
 		corpus_path=DEFAULT_CORPUS_PATH, 
 		start_time=None):
