@@ -9,10 +9,12 @@
   "author": "Xiao Li",
   "license": "MIT",
   "dependencies": {
-    "d3": "~4.2.2",
+    "d3": "~3.5.17",
     "angular": "~1.5.8",
     "socket.io-client": "~1.4.8",
-    "lodash": "~4.15.0"
+    "lodash": "~4.15.0",
+    "d3-cloud": "~1.2.1",
+    "angular-resource": "~1.5.8"
   },
   "devDependencies": {
     "grunt": "~1.0.1",

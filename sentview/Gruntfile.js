@@ -3,7 +3,7 @@ module.exports = function(grunt) {
 	var isDev = target == 'dev';
 	
 	var cacheString = Math.round((new Date()).getTime()/1000);
-	var libCacheString = '0.0.2';
+	var libCacheString = '0.0.3';
 	
 	grunt.initConfig({
 		template: {
@@ -30,7 +30,9 @@ module.exports = function(grunt) {
 						'node_modules/angular/angular.js', 
 						'node_modules/d3/build/d3.js', 
 						'node_modules/socket.io-client/socket.io.js',
-						'node_modules/lodash/lodash.js'
+						'node_modules/lodash/lodash.js',
+						'node_modules/d3-cloud/build/d3.layout.cloud.js',
+						'node_modules/angular-resource/angular-resource.js'
 					]
 				}
 			},

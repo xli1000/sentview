@@ -41,6 +41,10 @@ body {
 	height: 130px;
 }
 
+.term-chart {
+	height: 360px;
+}
+
 .svg-container {
     display: block;
     margin:auto;
@@ -53,4 +57,21 @@ body {
     position: absolute;
     top: 0;
     left: 0;
+}
+
+
+text.term {
+	cursor: pointer;
+}
+
+.positive {
+	text.term {
+		fill: DarkGreen;
+	}
+}
+
+.negative {
+	text.term {
+		fill: DarkRed;
+	}
 }
