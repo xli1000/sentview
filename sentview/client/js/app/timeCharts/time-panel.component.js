@@ -3,6 +3,6 @@
 		.module('sentview.timeCharts')
 		.component('svTimePanel', {
 			controller: 'TimePanelController as vm',
-			templateUrl: '/js/app/timeCharts/time-panel.component.html'
+			templateUrl: 'js/app/timeCharts/time-panel.component.html'
 		});
 }());
