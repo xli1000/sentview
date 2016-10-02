@@ -11,7 +11,7 @@
 		 * http://www.html5rocks.com/en/tutorials/frameworks/angular-websockets/ */
 		io.transports = ['websocket', 'xhr-polling'];
 		
-		var socket = io.connect(svSettings.apiRoot + 'rt');
+		var socket = io.connect('/rt', {path: svSettings.apiRoot + 'socket.io'});
 		
 		return {
 			on: on,

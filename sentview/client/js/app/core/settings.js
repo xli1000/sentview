@@ -8,7 +8,7 @@
 
 	function getSettings() {
 		return {
-			apiRoot: document.getElementById('url-base').href
+			apiRoot: document.getElementById('url-base').getAttribute('href')
 		};
 	}
 
