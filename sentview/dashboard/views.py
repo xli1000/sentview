@@ -1,7 +1,7 @@
 import json
 
 import arrow
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, render_template, current_app
 from sqlalchemy import func
 
 import queries
@@ -38,7 +38,8 @@ def get_terms():
 @dashboard.route('/')
 def index():
 	"""Main page"""
-	return render_template('index.html')
+	print dir(current_app.config)
+	return render_template('index.html', base_url_path=current_app.config['BASE_URL_PATH'])
 
 @dashboard.route('/sentiment')
 def sentiment():

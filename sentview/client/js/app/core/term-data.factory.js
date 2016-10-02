@@ -7,7 +7,7 @@
 
 	function termData($resource) {
 		var terms = {};
-	 	var termsResource = $resource('/terms');
+	 	var termsResource = $resource('terms');
 
 		return {
 			terms: terms,

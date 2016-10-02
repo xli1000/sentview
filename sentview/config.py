@@ -19,6 +19,7 @@ class base_config(object):
 		port = DB_PORT,
 		db = DB_DB
 	)
+	BASE_URL_PATH = os.environ.get('BASE_URL_PATH', '/')
 	MESSAGE_QUEUE = 'redis://'
 
 config = base_config

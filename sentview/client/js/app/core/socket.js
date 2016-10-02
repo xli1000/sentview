@@ -4,13 +4,14 @@
 		.module('sentview.core')
 		.factory('socket', socket);
 	
-	socket.$inject = ['$timeout'];
+	socket.$inject = ['$timeout', 'svSettings'];
 	
-	function socket($timeout) {
+	function socket($timeout, svSettings) {
 		/* socketio wrapper factory from
 		 * http://www.html5rocks.com/en/tutorials/frameworks/angular-websockets/ */
 		io.transports = ['websocket', 'xhr-polling'];
-		var socket = io.connect('/rt');
+		
+		var socket = io.connect(svSettings.apiRoot + 'rt');
 		
 		return {
 			on: on,

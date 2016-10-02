@@ -5,7 +5,7 @@
 	
 	sentimentData.$inject = ['$http', 'socket', '$rootScope'];
 	
-	function sentimentData($http, socket, $rootScope) {
+	function sentimentData($http, socket, $rootScope, svSettings) {
 		var intervals = ['15min', '1s'];
 		
 		/* For each interval size, keep an array of points
@@ -28,7 +28,7 @@
 		};
 		
 		function loadSentiment() {
-			return $http.get('/sentiment')
+			return $http.get('sentiment')
 				.then(onLoadSentiment);
 			
 			function onLoadSentiment(resp) {

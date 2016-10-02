@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<base id="url-base" href="{{base_url_path}}" />
 		<link href="//cdn.jsdelivr.net/blazecss/2.13.0/blaze.min.css" rel="stylesheet" />
 		<link href="https://fonts.googleapis.com/css?family=Roboto:400,700" rel="stylesheet">
-		<link href="/build/css/site.css?v=<%= cacheString %>" rel="stylesheet" />
+		<link href="build/css/site.css?v=<%= cacheString %>" rel="stylesheet" />
 		<title>Real-time Twitter Sample Sentiment</title>
 	</head>
 	<body ng-app="sentview.dashboard">
@@ -14,8 +15,8 @@
 
 			<sv-term-panel></sv-term-panel>
 			
-			<script src="/build/js/lib.js?v=<%= libCacheString %>"></script>
-			<script src="/build/js/app.js?v=<%= cacheString %>"></script>
+			<script src="build/js/lib.js?v=<%= libCacheString %>"></script>
+			<script src="build/js/app.js?v=<%= cacheString %>"></script>
 		</div>
 	</body>
 </html>
